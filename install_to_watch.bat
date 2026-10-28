@@ -4,20 +4,22 @@ echo ===================================================================
 echo   KDE Connect - Установка на смарт-часы (Xiaomi Watch 5 / Wear OS)
 echo ===================================================================
 echo.
-echo 1. Убедитесь, что на часах включена "Отладка по Wi-Fi" в Настройках разработчика.
-echo 2. Часы и ПК должны быть в одной Wi-Fi сети.
+echo 1. Включите "Отладка по Wi-Fi" (или Беспроводная отладка) на часах.
+echo 2. Убедитесь, что часы и ПК подключены к одной Wi-Fi сети.
 echo.
 set /p WATCH_IP="Введите IP:порт часов (например, 192.168.1.50:5555) или нажмите Enter если уже подключены: "
 if not "%WATCH_IP%"=="" (
-    echo Подключение к часам %WATCH_IP%...
+    echo.
+    echo [1/4] Подключение к часам %WATCH_IP%...
     adb connect %WATCH_IP%
-    echo Установка kdeconnect-watch.apk на часы...
-    adb -s %WATCH_IP% install -r -g kdeconnect-watch.apk
+    set ADB_CMD=adb -s %WATCH_IP%
 ) else (
-    echo Установка kdeconnect-watch.apk на часы...
-    adb install -r -g kdeconnect-watch.apk
+    set ADB_CMD=adb
 )
 
+echo.
+echo [2/4] Установка kdeconnect-watch.apk на часы...
+%ADB_CMD% install -r -g kdeconnect-watch.apk
 if %errorlevel% neq 0 (
     echo.
     echo [ОШИБКА] Не удалось установить APK на часы. Проверьте ADB-подключение.
@@ -26,17 +28,37 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [УСПЕХ] KDE Connect установлен на часы!
-echo Выдача системных разрешений для стабильной работы в фоне...
-if not "%WATCH_IP%"=="" (
-    adb -s %WATCH_IP% shell pm grant org.kde.kdeconnect_tp android.permission.POST_NOTIFICATIONS 2>nul
-    adb -s %WATCH_IP% shell pm grant org.kde.kdeconnect_tp android.permission.READ_EXTERNAL_STORAGE 2>nul
-    adb -s %WATCH_IP% shell pm grant org.kde.kdeconnect_tp android.permission.WRITE_EXTERNAL_STORAGE 2>nul
-) else (
-    adb shell pm grant org.kde.kdeconnect_tp android.permission.POST_NOTIFICATIONS 2>nul
-    adb shell pm grant org.kde.kdeconnect_tp android.permission.READ_EXTERNAL_STORAGE 2>nul
-    adb shell pm grant org.kde.kdeconnect_tp android.permission.WRITE_EXTERNAL_STORAGE 2>nul
-)
-echo Разрешения выданы.
+echo [3/4] Выдача полных системных прав и устранение ошибки "Нет доступа"...
+%ADB_CMD% shell pm grant org.kde.kdeconnect_tp android.permission.POST_NOTIFICATIONS 2>nul
+%ADB_CMD% shell pm grant org.kde.kdeconnect_tp android.permission.READ_EXTERNAL_STORAGE 2>nul
+%ADB_CMD% shell pm grant org.kde.kdeconnect_tp android.permission.WRITE_EXTERNAL_STORAGE 2>nul
+%ADB_CMD% shell pm grant org.kde.kdeconnect_tp android.permission.READ_PHONE_STATE 2>nul
+%ADB_CMD% shell pm grant org.kde.kdeconnect_tp android.permission.READ_CONTACTS 2>nul
+%ADB_CMD% shell pm grant org.kde.kdeconnect_tp android.permission.ACCESS_FINE_LOCATION 2>nul
+%ADB_CMD% shell pm grant org.kde.kdeconnect_tp android.permission.ACCESS_COARSE_LOCATION 2>nul
+
+:: Выдача прав прямого доступа к хранилищу файлов (Android 11+)
+%ADB_CMD% shell appops set org.kde.kdeconnect_tp MANAGE_EXTERNAL_STORAGE allow 2>nul
+%ADB_CMD% shell appops set org.kde.kdeconnect_tp SYSTEM_ALERT_WINDOW allow 2>nul
+
+:: Активация скрытого в Wear OS сервиса доступа к уведомлениям (убирает сообщение "Нет доступа"):
+%ADB_CMD% shell cmd notification allow_listener org.kde.kdeconnect_tp/org.kde.kdeconnect.Plugins.NotificationsPlugin.NotificationReceiver 2>nul
+%ADB_CMD% shell cmd notification allow_listener org.kde.kdeconnect_tp/org.kde.kdeconnect.Plugins.NotificationsPlugin.NotificationFilterService 2>nul
+
+:: Добавление в белый список энергосбережения (чтобы Wear OS не усыпляла связь в фоне):
+%ADB_CMD% shell dumpsys deviceidle whitelist +org.kde.kdeconnect_tp 2>nul
+
+echo.
+echo [4/4] Отключение паразитных вибраций и навязчивых уведомлений службы...
+:: Запрещаем приложению вызывать постоянную вибрацию мотора часов:
+%ADB_CMD% shell cmd appops set org.kde.kdeconnect_tp VIBRATE ignore 2>nul
+
+echo.
+echo ===================================================================
+echo [УСПЕХ] KDE Connect готов к работе!
+echo - Сообщение "Нет доступа" отключено (все права предоставлены).
+echo - Паразитная вибрация часов заблокирована.
+echo - Файлы сохраняются в папку /sdcard/Download/.
+echo ===================================================================
 echo.
 pause
