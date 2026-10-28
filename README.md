@@ -1,7 +1,7 @@
 # ⚡ Kaiser Link: Wear OS Watch & Phone Wireless Bridge
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/KDE/kdeconnect-android/master/res/mipmap-xxxhdpi/ic_launcher.png" width="100" alt="Kaiser Link Logo">
+  <img src="logo.png" width="180" alt="Kaiser Link Logo">
   <br>
   <b>Высокоскоростная передача файлов и синхронизация между Смартфоном, Часами (Xiaomi Watch 5 / Wear OS) и ПК</b>
   <br>
