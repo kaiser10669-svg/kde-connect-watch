@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ===================================================================
-echo   KDE Connect - Установка на смарт-часы (Xiaomi Watch 5 / Wear OS)
+echo   Kaiser Link - Установка на смарт-часы (Xiaomi Watch 5 / Wear OS)
 echo ===================================================================
 echo.
 echo 1. Включите "Отладка по Wi-Fi" (или Беспроводная отладка) на часах.
@@ -18,8 +18,8 @@ if not "%WATCH_IP%"=="" (
 )
 
 echo.
-echo [2/4] Установка kdeconnect-watch.apk на часы...
-%ADB_CMD% install -r -g kdeconnect-watch.apk
+echo [2/4] Установка kaiser-link-watch.apk на часы...
+%ADB_CMD% install -r -d -g kaiser-link-watch.apk
 if %errorlevel% neq 0 (
     echo.
     echo [ОШИБКА] Не удалось установить APK на часы. Проверьте ADB-подключение.
@@ -39,7 +39,13 @@ echo [3/4] Выдача полных системных прав и устран
 
 :: Выдача прав прямого доступа к хранилищу файлов (Android 11+)
 %ADB_CMD% shell appops set org.kde.kdeconnect_tp MANAGE_EXTERNAL_STORAGE allow 2>nul
+%ADB_CMD% shell appops set org.kde.kdeconnect_tp READ_MEDIA_AUDIO allow 2>nul
+%ADB_CMD% shell appops set org.kde.kdeconnect_tp WRITE_MEDIA_AUDIO allow 2>nul
+%ADB_CMD% shell appops set org.kde.kdeconnect_tp READ_MEDIA_IMAGES allow 2>nul
+%ADB_CMD% shell appops set org.kde.kdeconnect_tp WRITE_MEDIA_IMAGES allow 2>nul
 %ADB_CMD% shell appops set org.kde.kdeconnect_tp SYSTEM_ALERT_WINDOW allow 2>nul
+%ADB_CMD% shell appops set org.kde.kdeconnect_tp POST_NOTIFICATION ignore 2>nul
+%ADB_CMD% shell pm revoke org.kde.kdeconnect_tp android.permission.POST_NOTIFICATIONS 2>nul
 
 :: Активация скрытого в Wear OS сервиса доступа к уведомлениям (убирает сообщение "Нет доступа"):
 %ADB_CMD% shell cmd notification allow_listener org.kde.kdeconnect_tp/org.kde.kdeconnect.Plugins.NotificationsPlugin.NotificationReceiver 2>nul
